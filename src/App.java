@@ -4,6 +4,7 @@ import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashSet;
+import java.util.Arrays;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.builder.GraphTypeBuilder;
 import java.util.HashMap;
@@ -14,20 +15,10 @@ import org.jgrapht.util.SupplierUtil;
 import org.jgrapht.*;
 import org.jgrapht.graph.*;
 import org.jgrapht.graph.AbstractGraph.*;
-// import org.jgrapht.io.*;
-// import org.jgrapht.traverse.*;
 import java.io.*;
 import java.net.*;
 import java.util.*;
-
-
-// import org.jgrapht.alg.util.VertexDegreeComparator;
 import org.jgrapht.graph.AsSubgraph;
-// import org.jgrapht.graph.UndirectedSubgraph;
-
-
-
-
 public class App {
 	int V; 
 	int E;
@@ -62,6 +53,7 @@ public class App {
 		StringReader sr = new StringReader(new String(fileBytes, "UTF-8"));	
 		importer.importGraph(graph_t, sr);
 		V = graph_t.vertexSet().size();
+		membership = new int[com_num][V];
 		HashMap<String,Integer> Feat = new HashMap<String,Integer>();
 		int counter = 0;
 		hm = new HashMap<Integer, ArrayList<Integer>>();
@@ -123,46 +115,28 @@ public class App {
 				min_edges = graph.edgeSet().size() * 2 - total_degree;
 			Conductance[counter++] = cut/(min_edges * 1.0);
 		}
-		for (int i = 0 ; i < V ; i++)
-			System.out.print(Conductance[i] + "\t");
+		Integer[] indices = new Integer[V];
+		for (int i = 0 ; i<V;i++)
+			indices[i] = i;
+        Arrays.sort(indices, (o1,o2) -> Double.compare(Conductance[o1],Conductance[o2]));
+        counter = 0;
+        int i = 0;
+        boolean[] marker = new boolean[V];
+        while ((counter<com_num) && (i < V)){
+        	if (!marker[indices[i]]){
+        		marker[indices[i]] = true;
+        		Set<String> Neigh = Graphs.neighborSetOf(graph, String.valueOf(i));
+        		for (String s2:Neigh){
+        			membership[counter][Integer.valueOf(s2)] = 1;
+        			marker[Integer.valueOf(s2)] = true;
+        		}
+        	}
+        	i++;
+        }
 	}
 	public static void main(String[] args) throws Exception {
 		String basename = args[0];
 		App temp = new App(args);
-		temp.Intialize_Conductance();
-		// Graph<String, DefaultEdge> graph = GraphTypeBuilder
-		// 		.undirected()
-		// 		.allowingMultipleEdges(false)
-		// 		.allowingSelfLoops(false)
-		// 		.vertexSupplier(SupplierUtil.createStringSupplier())
-		// 		.edgeSupplier(SupplierUtil.createDefaultEdgeSupplier())
-		// 		.buildGraph();
-		
-		// VertexProvider<String> vp = (id, attributes) -> {
-		// 	System.out.println("Creating node " + id);
-		// 	for(String key: attributes.keySet()) { 
-		// 		System.out.println("key: " + key + ", value: " + attributes.get(key));
-		// 	}
-		// 	return id;
-		// };
-		// VertexProvider<String> vp = (id, attributes) -> id; 
-		// {
-		// System.out.println("Creating node " + id);
-		// for(String key: attributes.keySet()) { 
-		// 	System.out.println("key: " + key + ", value: " + attributes.get(key));
-		// }
-		// return id;
-		// };
-
-		// EdgeProvider<String, DefaultEdge> ep = (from, to, label, attributes) -> new DefaultEdge();
-		// GmlImporter<String, DefaultEdge> importer = new GmlImporter<>(vp, ep);
-		// // File file = new File("/home/khsh/Dropbox/Hajiabadi/working papers/Metadata_SecondWork/Gradient-Based Implementaion/MetaData/Inference/WorldTrade.gml");
-		// File file = new File("/home/khsh/MetaData/DataSet/WeddellSea_network/WeddellSea_Environment.gml");
-		// byte[] fileBytes = Files.readAllBytes(Paths.get(file.getAbsolutePath()));
-		// StringReader sr = new StringReader(new String(fileBytes, "UTF-8"));		
-		// importer.importGraph(graph, sr);
-		// System.out.println("The Degree of Node " + 0 + " is: " + graph.degreeOf("341"));
-		
+		temp.Intialize_Conductance();		
 	}
-	
 }
