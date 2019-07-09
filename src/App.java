@@ -157,6 +157,7 @@ public class App {
 	public void Update_Membership(){
 		double[][] Membership_difference = new double[V][com_num];
 		double[] sum_total = add_columns(membership);
+		double[][] deltaI = new double[com_num][com_num];
 		for (String s: graph.vertexSet()){
 			double[] source_membership = membership[Integer.valueOf(s)];
 			double[] neighbor_membership_acc = new double[com_num];
@@ -186,10 +187,59 @@ public class App {
 			double[] diff_att = multiply(first_val , W);
 			Membership_difference[Integer.valueOf(s)] = add(Membership_difference[Integer.valueOf(s)] , diff_att);
 			System.out.println(Membership_difference[Integer.valueOf(s)][0]);
+			//=============================== Updating the Parameter I
+			double[] S_u = S[Integer.valueOf(s)];
+			double[] S_u_times_I = multiply(S_u, I);
+			Factor = 0 ;
+			for (int i = 0 ; i < S_u_times_I.length ; i++)
+				Factor = Factor + S_u_times_I[i];
+			Up = Math.exp(-Factor);
+			Down = Math.pow(1 + Math.exp(-Factor), 2);
+			Factor = Up/Down;
+			for (int i = 0 ; i < S_u.length ; i++)
+				for (int j = 0 ; j < com_num ; j++)
+				deltaI[i][j] = deltaI[i][j] + S_u[i] * Factor * Membership_difference[Integer.valueOf(s)][j];
 		}
 	}
+
 	//=============================================================================
-	 // return c = a - b
+	public void update_params(){
+		double[][] deltaB = new double[com_num][com_num];
+		double[][] deltaW = new double[com_num][com_num];
+		double[] sum_total = add_columns(membership);
+		for (String s: graph.vertexSet()){
+			double[] M_W = multiply(membership[Integer.valueOf(s)] , W);
+			for (int i = 0 ; i < M_W.length ; i++){
+				M_W[i] =  F[Integer.valueOf(s)][i] - 1/(1 + Math.exp(-M_W[i]));
+			}
+			for (int i = 0 ; i < M_W.length ; i++)
+				for (int j = 0 ; j < com_num ; j++)
+					deltaW[i][j] = M_W[i] * membership[Integer.valueOf(s)][j];
+		//============================== Updating Parameters Beta
+			double[] source_membership = membership[Integer.valueOf(s)];
+			double[] neighbor_membership_acc = new double[com_num];
+			double[] source_times_beta = multiply(source_membership, beta);
+			double result = 0;
+			Set<String> Neigh = Graphs.neighborSetOf(graph,s);
+			for (String s2: Neigh){
+				result = result + dot(source_times_beta , membership[Integer.valueOf(s2)]);
+				neighbor_membership_acc = add(neighbor_membership_acc,membership[Integer.valueOf(s2)]);
+			}
+			double Factor = dot(source_times_beta , neighbor_membership_acc);
+			double Up = Math.exp(-Factor);
+			double Down = 1 - Math.exp(-Factor);
+			if (Down==0) continue;
+			for (int i = 0 ; i < com_num ; i++)
+				for (int j = 0 ; j < com_num ; j++)
+					deltaB[i][j] = deltaB[i][j] - source_membership[i] * neighbor_membership_acc[j] * Up/Down;
+			double[] non_neigh_membership_acc = subtract(sum_total , neighbor_membership_acc);
+			for (int i = 0 ; i < com_num ; i++)
+				for (int j = 0 ; j < com_num ; j++)
+					deltaB[i][j] = deltaB[i][j] - source_membership[i] * non_neigh_membership_acc[j];
+		}
+	}
+	//=================================================================================
+	// return c = a - b
     public static double[][] subtract(double[][] a, double[][] b) {
         int m = a.length;
         int n = a[0].length;
