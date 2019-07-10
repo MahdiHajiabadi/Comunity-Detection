@@ -17,6 +17,8 @@ import java.lang.Math;
 import org.jgrapht.graph.AsSubgraph;
 public class App {
 	int V; 
+	double sparcity;
+	double alpha;
 	int E;
 	int com_num;
 	int[][] truth;
@@ -26,9 +28,11 @@ public class App {
 	double[][] I;
 	double[][] W;
 	double[][] beta;
+	int[][] M;
 	Graph<String, DefaultEdge> graph;
 	HashMap<Integer,ArrayList<Integer>> hm;
 	public App (String[] args) throws Exception {
+		alpha = 0.01;
 		String basename = args[0];
 		String com = args[1];
 		com_num = Integer.parseInt(com);
@@ -89,11 +93,14 @@ public class App {
 		}
 		System.out.println(hm.size() + " Number of Vertices: " + V + " Size of the HashMap is: " + Feat.size());
 		S = new double[V][Feat.size()];
+		truth = new int[V][Feat.size()];
 
 		for (int i = 0 ; i < V ; i++) {
 			ArrayList<Integer> var = hm.get(i);
-			for (int j = 0 ; j < var.size() ; j++)
+			for (int j = 0 ; j < var.size() ; j++){
 				S[i][var.get(j)] = 1;
+				truth[i][var.get(j)] = 1;
+			}
 		}
 		I = new double[com_num][com_num];
 		W = new double[com_num][com_num];
@@ -155,6 +162,7 @@ public class App {
 	}
 	//==============================================================================
 	public void Update_Membership(){
+		sparcity = (E * 1.0)/(V * V * 1.0);
 		double[][] Membership_difference = new double[V][com_num];
 		double[] sum_total = add_columns(membership);
 		double[][] deltaI = new double[com_num][com_num];
@@ -176,10 +184,7 @@ public class App {
 			for (int i = 0 ; i < com_num ; i++) neigh_times_beta[i] = neigh_times_beta[i] * Factor;
 			double[] non_neigh_membership_acc = subtract(sum_total , neighbor_membership_acc);
 			double[] non_neigh_times_beta = multiply(non_neigh_membership_acc,beta);
-			Membership_difference[Integer.valueOf(s)] = subtract(neigh_times_beta , non_neigh_times_beta);
-			
-			// System.out.println(neighbor_membership_acc[0]);
-			// Going for geting the differences by attributes. 
+			Membership_difference[Integer.valueOf(s)] = subtract(neigh_times_beta , non_neigh_times_beta, sparcity);
 			double[] node_att = multiply(membership[Integer.valueOf(s)] , W);
 			for (int i = 0 ; i < com_num ; i++)
 				node_att[i] = 1.0/(1 + Math.exp(-node_att[i]));
@@ -200,8 +205,15 @@ public class App {
 				for (int j = 0 ; j < com_num ; j++)
 				deltaI[i][j] = deltaI[i][j] + S_u[i] * Factor * Membership_difference[Integer.valueOf(s)][j];
 		}
+		for (String s:graph.vertexSet())
+			for(int j = 0 ; j < com_num ; j++){
+				membership[Integer.valueOf(s)][j] = membership[Integer.valueOf(s)][j] + alpha * Membership_difference[Integer.valueOf(s)][j];
+			}
+			for (int i = 0 ; i < com_num ; i++)
+				for(int j = 0 ; j < com_num ; j++){
+					I[i][j] = I[i][j] + alpha * deltaI[i][j];
+			}
 	}
-
 	//=============================================================================
 	public void update_params(){
 		double[][] deltaB = new double[com_num][com_num];
@@ -239,6 +251,42 @@ public class App {
 		}
 	}
 	//=================================================================================
+	public void deterministic_membership(){
+		double Threshold = 0.5;
+		for(int i = 0 ; i < V ; i++){
+			int idx = 0;
+			double max = 0;
+			for (int j = 0 ; j < com_num ; j++)
+			{
+				if(membership[i][j]> max){
+					max = membership[i][j];
+					idx = j;
+				}
+			}
+			M[i][idx] = 1;
+		}
+	}
+	//===========================================================================
+	public void matching()
+	{
+		int[][] temp_M = new int[V][com_num];
+		boolean[] marker = new boolean[com_num];
+		for (int i = 0 ; i < com_num ; i++){
+			int max = 0;
+			int idx = -1;
+			for (int j = 0 ; j < com_num ; j++){
+				int counter = 0;
+				for(int k = 0 ; k < V ; k++){
+					if ((M[k][i]==1) && (truth[k][j]==1))
+						counter++;
+				}
+				if (counter > max){
+					max = counter;
+				}
+			}
+		}
+	}
+	//=================================================================================
 	// return c = a - b
     public static double[][] subtract(double[][] a, double[][] b) {
         int m = a.length;
@@ -247,6 +295,15 @@ public class App {
         for (int i = 0; i < m; i++)
             for (int j = 0; j < n; j++)
                 c[i][j] = a[i][j] - b[i][j];
+        return c;
+    }
+    //==========================================================================
+    // return c = a - b
+    public static double[] subtract(double[] a, double[] b,double sparcity) {
+        int m = a.length;
+        double[] c = new double[m];
+        for (int i = 0; i < m; i++)
+            c[i] = a[i] - b[i] * sparcity;
         return c;
     }
     //==========================================================================
@@ -327,7 +384,10 @@ public class App {
 	public static void main(String[] args) throws Exception {
 		String basename = args[0];
 		App temp = new App(args);
-		temp.Intialize_Conductance();		
-		temp.Update_Membership();
+		for (int i = 0 ; i < 10 ; i++){
+			temp.Intialize_Conductance();		
+			temp.Update_Membership();
+			temp.update_params();
+		}
 	}
 }
