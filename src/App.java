@@ -39,7 +39,11 @@ public class App {
 		System.out.println(" Number of Community is: " + com_num);
 		beta = new double[com_num][com_num];
 		for (int i = 0 ; i < com_num ; i++)
-			beta[i][i] = 3;
+			for(int j = 0 ; j < com_num ; j++)
+				if (i ==j)
+					beta[i][i] = 0.3;
+				else
+					beta[i][j] = 0.1;
 		// File file = new File(basename);
 		File file = new File("/home/khsh/MetaData/DataSet/WeddellSea_network/WeddellSea_Environment.gml");
 			Graph<String, DefaultEdge> graph_t = GraphTypeBuilder
@@ -151,18 +155,21 @@ public class App {
         while ((counter<com_num) && (i < V)){
         	if (!marker[indices[i]]){
         		marker[indices[i]] = true;
-        		Set<String> Neigh = Graphs.neighborSetOf(graph, String.valueOf(i));
+        		Set<String> Neigh = Graphs.neighborSetOf(graph, String.valueOf(indices[i]));
         		for (String s2:Neigh){
         			membership[Integer.valueOf(s2)][counter] = 1;
         			marker[Integer.valueOf(s2)] = true;
         		}
+        		counter++;
         	}
         	i++;
         }
+        double[] tt = add_columns(membership);
+        for (i = 0 ; i< tt.length ; i++) System.out.print(tt[i] + " ");
 	}
 	//==============================================================================
 	public void Update_Membership(){
-		sparcity = (E * 1.0)/(V * V * 1.0);
+		// sparcity = (E * 1.0)/(V * V * 1.0);
 		double[][] Membership_difference = new double[V][com_num];
 		double[] sum_total = add_columns(membership);
 		double[][] deltaI = new double[com_num][com_num];
@@ -172,6 +179,8 @@ public class App {
 			double[] source_times_beta = multiply(source_membership, beta);
 			double result = 0;
 			Set<String> Neigh = Graphs.neighborSetOf(graph,s);
+			double sparcity = (Neigh.size() * 1.0)/(V * 1.0);
+			System.out.println("sparcity is: "+ sparcity);
 			for (String s2: Neigh){
 				result = result + dot(source_times_beta , membership[Integer.valueOf(s2)]);
 				neighbor_membership_acc = add(neighbor_membership_acc,membership[Integer.valueOf(s2)]);
@@ -181,17 +190,29 @@ public class App {
 			if (Down ==0) continue;
 			double Factor = Up/Down;
 			double[] neigh_times_beta = multiply(neighbor_membership_acc,beta);
-			for (int i = 0 ; i < com_num ; i++) neigh_times_beta[i] = neigh_times_beta[i] * Factor;
+			//====================================================== Important Line
+			for (int i = 0 ; i < com_num ; i++) neigh_times_beta[i] = neigh_times_beta[i] * Factor ;
+				System.out.println("For Neighbors: ");
+			System.out.println();
+			for(int i = 0 ; i < com_num ; i++) System.out.print(neigh_times_beta[i] + "  ");
 			double[] non_neigh_membership_acc = subtract(sum_total , neighbor_membership_acc);
 			double[] non_neigh_times_beta = multiply(non_neigh_membership_acc,beta);
-			Membership_difference[Integer.valueOf(s)] = subtract(neigh_times_beta , non_neigh_times_beta, sparcity);
+			System.out.println("For Non-Neighbors: ");
+			System.out.println();
+			for(int i = 0 ; i < com_num ; i++)
+				System.out.print(non_neigh_times_beta[i] + "  ");
+			Membership_difference[Integer.valueOf(s)] = subtract(neigh_times_beta , non_neigh_times_beta ,  sparcity);
 			double[] node_att = multiply(membership[Integer.valueOf(s)] , W);
 			for (int i = 0 ; i < com_num ; i++)
 				node_att[i] = 1.0/(1 + Math.exp(-node_att[i]));
 			double[] first_val = subtract(F[Integer.valueOf(s)] , node_att);
 			double[] diff_att = multiply(first_val , W);
+			System.out.println("Attribute Deifferences: ");
+			for(int i = 0 ; i < com_num ; i++){
+				System.out.print(diff_att[i] + "  ");
+			}
 			Membership_difference[Integer.valueOf(s)] = add(Membership_difference[Integer.valueOf(s)] , diff_att);
-			System.out.println(Membership_difference[Integer.valueOf(s)][0]);
+			// System.out.println(Membership_difference[Integer.valueOf(s)][0]);
 			//=============================== Updating the Parameter I
 			double[] S_u = S[Integer.valueOf(s)];
 			double[] S_u_times_I = multiply(S_u, I);
@@ -208,6 +229,7 @@ public class App {
 		for (String s:graph.vertexSet())
 			for(int j = 0 ; j < com_num ; j++){
 				membership[Integer.valueOf(s)][j] = membership[Integer.valueOf(s)][j] + alpha * Membership_difference[Integer.valueOf(s)][j];
+				if (membership[Integer.valueOf(s)][j] < 0) membership[Integer.valueOf(s)][j] = 0;
 			}
 			for (int i = 0 ; i < com_num ; i++)
 				for(int j = 0 ; j < com_num ; j++){
@@ -217,6 +239,7 @@ public class App {
 	//=============================================================================
 	public void update_params(){
 		double[][] deltaB = new double[com_num][com_num];
+		alpha = 0.01;
 		double[][] deltaW = new double[com_num][com_num];
 		double[] sum_total = add_columns(membership);
 		for (String s: graph.vertexSet()){
@@ -227,6 +250,9 @@ public class App {
 			for (int i = 0 ; i < M_W.length ; i++)
 				for (int j = 0 ; j < com_num ; j++)
 					deltaW[i][j] = M_W[i] * membership[Integer.valueOf(s)][j];
+			for (int i = 0 ; i < com_num ; i++)
+				for (int j = 0 ; j < com_num ; j++)
+					W[i][j] = W[i][j] + alpha * deltaW[i][j];
 		//============================== Updating Parameters Beta
 			double[] source_membership = membership[Integer.valueOf(s)];
 			double[] neighbor_membership_acc = new double[com_num];
@@ -249,21 +275,27 @@ public class App {
 				for (int j = 0 ; j < com_num ; j++)
 					deltaB[i][j] = deltaB[i][j] - source_membership[i] * non_neigh_membership_acc[j];
 		}
+		// for (int i = 0 ; i < com_num ; i++)
+		// 	for (int j = 0 ; j < com_num ; j++)
+		// 		beta[i][j] = beta[i][j] + alpha * deltaB[i][j];
+
 	}
 	//=================================================================================
 	public void deterministic_membership(){
 		double Threshold = 0.5;
+		M = new int[V][com_num];
 		for(int i = 0 ; i < V ; i++){
 			int idx = 0;
 			double max = 0;
 			for (int j = 0 ; j < com_num ; j++)
 			{
-				if(membership[i][j]> max){
-					max = membership[i][j];
-					idx = j;
+				if(membership[i][j]> Threshold){
+					M[i][j] = 1;
+					// max = membership[i][j];
+					// idx = j;
 				}
 			}
-			M[i][idx] = 1;
+			// M[i][idx] = 1;
 		}
 	}
 	//===========================================================================
@@ -272,18 +304,20 @@ public class App {
 		int[][] temp_M = new int[V][com_num];
 		boolean[] marker = new boolean[com_num];
 		for (int i = 0 ; i < com_num ; i++){
+			int[] common = new int[com_num];
 			int max = 0;
 			int idx = -1;
 			for (int j = 0 ; j < com_num ; j++){
-				int counter = 0;
+				if (marker[j]==true) continue;
 				for(int k = 0 ; k < V ; k++){
 					if ((M[k][i]==1) && (truth[k][j]==1))
-						counter++;
-				}
-				if (counter > max){
-					max = counter;
+						 common[j]++;
 				}
 			}
+			Integer[] G = new Integer[com_num];
+			for(int ttt = 0; ttt < com_num; ttt++) G[ttt] = ttt;
+			Arrays.sort(G, (o1,o2) -> Integer.compare(common[o2],common[o1]));
+			System.out.println(G[0] + " Second Element is: " + G[1]);
 		}
 	}
 	//=================================================================================
@@ -372,6 +406,17 @@ public class App {
     	}
     	return y;
     }
+
+    public static int[] add_columns(int[][] a){
+    	int m = a.length;
+    	int n = a[0].length;
+    	int[] y = new int[n];
+    	for (int i = 0 ; i < m ; i++){
+    		for (int j = 0 ; j < n ; j++)
+    			y[j] = y[j] + a[i][j];
+    	}
+    	return y;
+    }
     //==========================================================================
     public static double[] add(double[] a, double[] b){
     	if (a.length != b.length) throw new RuntimeException("Illegal vector dimensions.");
@@ -380,14 +425,55 @@ public class App {
     		y[i] = a[i] + b[i];
     	return y;
     }
+    //==============================
+    public static double[] add(double[] a, double[] b , double sparcity){
+    	if (a.length != b.length) throw new RuntimeException("Illegal vector dimensions.");
+    	double[] y = new double[a.length];
+    	for (int i = 0 ; i < a.length ; i++)
+    		y[i] = a[i] + b[i] * sparcity;
+    	return y;
+    }
     //==========================================================================
 	public static void main(String[] args) throws Exception {
 		String basename = args[0];
 		App temp = new App(args);
-		for (int i = 0 ; i < 10 ; i++){
-			temp.Intialize_Conductance();		
+		temp.membership = temp.S.clone();
+		// temp.Intialize_Conductance();
+		System.out.println();
+		for (int i = 0 ; i < 1 ; i++){
+			for (int j = 0 ; j < temp.com_num ; j++)
+				System.out.print(temp.membership[i][j] + "  ");
+			System.out.println();
+		}
+		for (int iter = 0 ; iter < 14 ; iter++){
 			temp.Update_Membership();
 			temp.update_params();
+			System.out.println(iter);
+			// for (int ii = 0 ; ii < temp.com_num ; ii++){
+			// 	for (int j = 0 ; j < temp.com_num ; j++)
+			// 		System.out.print(temp.W[ii][j] + "  ");
+			// 	System.out.println();
+			// }
+			// for (int ii = 0 ; ii < temp.com_num ; ii++){
+			// 	for (int j = 0 ; j < temp.com_num ; j++)
+			// 		System.out.print(temp.I[ii][j] + "  ");
+			// 	System.out.println();
+			// }
+			// for (int ii = 0 ; ii < temp.com_num ; ii++){
+			// 	for (int j = 0 ; j < temp.com_num ; j++)
+			// 		System.out.print(temp.beta[ii][j] + "  ");
+			// 	System.out.println();
+			// }
+			// for (int i = 0 ; i < 20 ; i++){
+			// 	for (int j = 0 ; j < temp.com_num ; j++)
+			// 		System.out.print(temp.membership[i][j] + "  ");
+			// 	System.out.println();
+			// }
 		}
+		temp.deterministic_membership();
+		int[] res = temp.add_columns(temp.M);
+		for (int ii = 0 ; ii < res.length ; ii++)
+				System.out.print(res[ii] + "  ");
+		temp.matching();
 	}
 }
