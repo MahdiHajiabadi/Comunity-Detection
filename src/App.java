@@ -45,7 +45,7 @@ public class App {
 				else
 					beta[i][j] = 0.1;
 		// File file = new File(basename);
-		File file = new File("/home/khsh/MetaData/DataSet/WeddellSea_network/WeddellSea_Environment.gml");
+		File file = new File("/home/khsh/MetaData/DataSet/WeddellSea_network/WeddellSea_Feeding_type.gml");
 			Graph<String, DefaultEdge> graph_t = GraphTypeBuilder
 				.undirected()
 				.allowingMultipleEdges(false)
@@ -164,8 +164,7 @@ public class App {
         	}
         	i++;
         }
-        double[] tt = add_columns(membership);
-        for (i = 0 ; i< tt.length ; i++) System.out.print(tt[i] + " ");
+        // double[] tt = add_columns(membership);
 	}
 	//==============================================================================
 	public void Update_Membership(){
@@ -180,7 +179,6 @@ public class App {
 			double result = 0;
 			Set<String> Neigh = Graphs.neighborSetOf(graph,s);
 			double sparcity = (Neigh.size() * 1.0)/(V * 1.0);
-			System.out.println("sparcity is: "+ sparcity);
 			for (String s2: Neigh){
 				result = result + dot(source_times_beta , membership[Integer.valueOf(s2)]);
 				neighbor_membership_acc = add(neighbor_membership_acc,membership[Integer.valueOf(s2)]);
@@ -191,26 +189,14 @@ public class App {
 			double Factor = Up/Down;
 			double[] neigh_times_beta = multiply(neighbor_membership_acc,beta);
 			//====================================================== Important Line
-			for (int i = 0 ; i < com_num ; i++) neigh_times_beta[i] = neigh_times_beta[i] * Factor ;
-				System.out.println("For Neighbors: ");
-			System.out.println();
-			for(int i = 0 ; i < com_num ; i++) System.out.print(neigh_times_beta[i] + "  ");
 			double[] non_neigh_membership_acc = subtract(sum_total , neighbor_membership_acc);
 			double[] non_neigh_times_beta = multiply(non_neigh_membership_acc,beta);
-			System.out.println("For Non-Neighbors: ");
-			System.out.println();
-			for(int i = 0 ; i < com_num ; i++)
-				System.out.print(non_neigh_times_beta[i] + "  ");
 			Membership_difference[Integer.valueOf(s)] = subtract(neigh_times_beta , non_neigh_times_beta ,  sparcity);
 			double[] node_att = multiply(membership[Integer.valueOf(s)] , W);
 			for (int i = 0 ; i < com_num ; i++)
 				node_att[i] = 1.0/(1 + Math.exp(-node_att[i]));
 			double[] first_val = subtract(F[Integer.valueOf(s)] , node_att);
 			double[] diff_att = multiply(first_val , W);
-			System.out.println("Attribute Deifferences: ");
-			for(int i = 0 ; i < com_num ; i++){
-				System.out.print(diff_att[i] + "  ");
-			}
 			Membership_difference[Integer.valueOf(s)] = add(Membership_difference[Integer.valueOf(s)] , diff_att);
 			// System.out.println(Membership_difference[Integer.valueOf(s)][0]);
 			//=============================== Updating the Parameter I
@@ -317,7 +303,7 @@ public class App {
 			Integer[] G = new Integer[com_num];
 			for(int ttt = 0; ttt < com_num; ttt++) G[ttt] = ttt;
 			Arrays.sort(G, (o1,o2) -> Integer.compare(common[o2],common[o1]));
-			System.out.println(G[0] + " Second Element is: " + G[1]);
+			// System.out.println(G[0] + " Second Element is: " + G[1]);
 		}
 	}
 	//=================================================================================
@@ -440,12 +426,7 @@ public class App {
 		temp.membership = temp.S.clone();
 		// temp.Intialize_Conductance();
 		System.out.println();
-		for (int i = 0 ; i < 1 ; i++){
-			for (int j = 0 ; j < temp.com_num ; j++)
-				System.out.print(temp.membership[i][j] + "  ");
-			System.out.println();
-		}
-		for (int iter = 0 ; iter < 14 ; iter++){
+		for (int iter = 0 ; iter < 10 ; iter++){
 			temp.Update_Membership();
 			temp.update_params();
 			System.out.println(iter);
