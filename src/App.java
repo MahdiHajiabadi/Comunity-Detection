@@ -29,6 +29,7 @@ public class App {
 	double[][] W;
 	double[][] beta;
 	int[][] M;
+	int[][] Confusion;
 	Graph<String, DefaultEdge> graph;
 	HashMap<Integer,ArrayList<Integer>> hm;
 	public App (String[] args) throws Exception {
@@ -292,7 +293,6 @@ public class App {
 		for (int i = 0 ; i < com_num ; i++){
 			int[] common = new int[com_num];
 			int max = 0;
-			int idx = -1;
 			for (int j = 0 ; j < com_num ; j++){
 				if (marker[j]==true) continue;
 				for(int k = 0 ; k < V ; k++){
@@ -304,9 +304,85 @@ public class App {
 			for(int ttt = 0; ttt < com_num; ttt++) G[ttt] = ttt;
 			Arrays.sort(G, (o1,o2) -> Integer.compare(common[o2],common[o1]));
 			// System.out.println(G[0] + " Second Element is: " + G[1]);
+			int counter = 0;
+			int idx = G[counter];
+			while(marker[idx]==true){
+				counter++;
+				idx = G[counter];
+			}
+			marker[idx] = true;
+			for (int vertex = 0 ; vertex < V ; vertex++){
+				int swap = M[vertex][i];
+				M[vertex][i] = M[vertex][idx];
+				M[vertex][idx] = swap;
+			}
 		}
 	}
 	//=================================================================================
+	public double F_Meausre()
+	{
+		Confusion = new int[com_num][com_num];
+		double sum_val = 0;
+		for(int i = 0 ; i < V ; i++)
+		{
+			int idx_truth = 0;
+			int idx_prediction = 0;
+			for (int j = 0 ; j < com_num ; j++){
+				if (truth[i][j]==1)
+					idx_truth = j;
+				if(M[i][j]==1)
+					idx_prediction = j;
+				Confusion[idx_truth][idx_prediction]++;
+			}
+		}
+		double precision = 0; 
+		double recall = 0;
+		double[] F_Score = new double[com_num];
+		for (int i = 0 ; i < com_num ; i++){
+			int sum_col = 0;
+			int sum_row = 0;
+			for (int j = 0 ; j < com_num ; j++)
+			{
+				sum_row = sum_row + Confusion[i][j];
+				sum_col = sum_col + Confusion[j][i];
+			}
+			precision = (Confusion[i][i] * 1.0) / (sum_row * 1.0);
+			recall = (Confusion[i][i] * 1.0) / (sum_col * 1.0);
+			F_Score[i] = (2 * precision * recall)/(precision + recall);
+			sum_val = F_Score[i] + sum_val;
+		}
+		return sum_val/(com_num * 1.0);
+	}
+	//========================================================================= 
+	//Entropy
+	public double Entropy(int[][] Labels)
+	{
+		int[] sum = add_columns(Labels);
+		double entropy = 0;
+		for (int i = 0 ; i < com_num ; i++){
+			double prob = (sum[i]*1.0)/(V * 1.0);
+			entropy = entropy + (-1 * prob) * Math.log(prob)/Math.log(2);
+		}
+		return entropy;
+	}
+	//===============================================================================
+	public double conditional_entropy(){
+		int[] sum_col = add_columns(Confusion);
+		double  result = 0; 
+		for (int i = 0 ; i < com_num ; i++)
+		{
+			double temp = 0;
+			for (int j = 0 ; j < com_num ; j++){
+				double prob = (Confusion[j][i] * 1.0)/(sum_col[i] * 1.0);
+				if(prob==0) continue;
+				temp = temp + prob * Math.log(prob)/Math.log(2);
+
+			}
+			result = result + (-sum_col[i]* 1.0) / (V * 1.0) * temp;
+		}
+		return result;
+	}
+	//================================================================================
 	// return c = a - b
     public static double[][] subtract(double[][] a, double[][] b) {
         int m = a.length;
@@ -426,35 +502,26 @@ public class App {
 		temp.membership = temp.S.clone();
 		// temp.Intialize_Conductance();
 		System.out.println();
-		for (int iter = 0 ; iter < 10 ; iter++){
+		for (int iter = 0 ; iter < 15 ; iter++){
 			temp.Update_Membership();
 			temp.update_params();
 			System.out.println(iter);
-			// for (int ii = 0 ; ii < temp.com_num ; ii++){
-			// 	for (int j = 0 ; j < temp.com_num ; j++)
-			// 		System.out.print(temp.W[ii][j] + "  ");
-			// 	System.out.println();
-			// }
-			// for (int ii = 0 ; ii < temp.com_num ; ii++){
-			// 	for (int j = 0 ; j < temp.com_num ; j++)
-			// 		System.out.print(temp.I[ii][j] + "  ");
-			// 	System.out.println();
-			// }
-			// for (int ii = 0 ; ii < temp.com_num ; ii++){
-			// 	for (int j = 0 ; j < temp.com_num ; j++)
-			// 		System.out.print(temp.beta[ii][j] + "  ");
-			// 	System.out.println();
-			// }
-			// for (int i = 0 ; i < 20 ; i++){
-			// 	for (int j = 0 ; j < temp.com_num ; j++)
-			// 		System.out.print(temp.membership[i][j] + "  ");
-			// 	System.out.println();
-			// }
 		}
 		temp.deterministic_membership();
 		int[] res = temp.add_columns(temp.M);
 		for (int ii = 0 ; ii < res.length ; ii++)
 				System.out.print(res[ii] + "  ");
 		temp.matching();
+		double f_measure = temp.F_Meausre();
+		System.out.println("F_Measure value is: " + f_measure);
+		double H_Y = temp.Entropy(temp.truth);
+		System.out.println(" H(Y): " + H_Y);
+		double H_C = temp.Entropy(temp.M);
+		System.out.println(" H(C): " + H_C);
+		double I_Y_C = temp.conditional_entropy();
+		I_Y_C = H_Y - I_Y_C;
+		System.out.println(" I(Y:C): " + I_Y_C);
+		double NMI = 2 * I_Y_C/(H_Y + H_C);
+		System.out.println("NMI is: " + NMI);
 	}
 }
