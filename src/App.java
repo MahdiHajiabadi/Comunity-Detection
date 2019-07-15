@@ -46,7 +46,10 @@ public class App {
 				else
 					beta[i][j] = 0.1;
 		// File file = new File(basename);
-		File file = new File("/home/khsh/MetaData/DataSet/WeddellSea_network/WeddellSea_Feeding_type.gml");
+		// File file = new File("/home/khsh/MetaData/DataSet/WeddellSea_network/WeddellSea_Feeding_type.gml");
+		// File file = new File("/home/khsh/MetaData/Codes/Inference/Lawyer.gml");
+		// File file = new File("/home/khsh/MetaData/Codes/Inference/WorldTrade.gml");
+				File file = new File("/home/khsh/MetaData/Codes/Inference/Rice.gml");
 			Graph<String, DefaultEdge> graph_t = GraphTypeBuilder
 				.undirected()
 				.allowingMultipleEdges(false)
@@ -169,7 +172,6 @@ public class App {
 	}
 	//==============================================================================
 	public void Update_Membership(){
-		// sparcity = (E * 1.0)/(V * V * 1.0);
 		double[][] Membership_difference = new double[V][com_num];
 		double[] sum_total = add_columns(membership);
 		double[][] deltaI = new double[com_num][com_num];
@@ -179,7 +181,6 @@ public class App {
 			double[] source_times_beta = multiply(source_membership, beta);
 			double result = 0;
 			Set<String> Neigh = Graphs.neighborSetOf(graph,s);
-			double sparcity = (Neigh.size() * 1.0)/(V * 1.0);
 			for (String s2: Neigh){
 				result = result + dot(source_times_beta , membership[Integer.valueOf(s2)]);
 				neighbor_membership_acc = add(neighbor_membership_acc,membership[Integer.valueOf(s2)]);
@@ -192,12 +193,14 @@ public class App {
 			//====================================================== Important Line
 			double[] non_neigh_membership_acc = subtract(sum_total , neighbor_membership_acc);
 			double[] non_neigh_times_beta = multiply(non_neigh_membership_acc,beta);
-			Membership_difference[Integer.valueOf(s)] = subtract(neigh_times_beta , non_neigh_times_beta ,  sparcity);
+			Membership_difference[Integer.valueOf(s)] = subtract(neigh_times_beta , non_neigh_times_beta ,  Neigh.size());
+			System.out.println(" Structural inference is: " + Membership_difference[Integer.valueOf(s)][0]);
 			double[] node_att = multiply(membership[Integer.valueOf(s)] , W);
 			for (int i = 0 ; i < com_num ; i++)
 				node_att[i] = 1.0/(1 + Math.exp(-node_att[i]));
 			double[] first_val = subtract(F[Integer.valueOf(s)] , node_att);
 			double[] diff_att = multiply(first_val , W);
+			System.out.println(" Attributal inference is: " + diff_att[0]);
 			Membership_difference[Integer.valueOf(s)] = add(Membership_difference[Integer.valueOf(s)] , diff_att);
 			// System.out.println(Membership_difference[Integer.valueOf(s)][0]);
 			//=============================== Updating the Parameter I
@@ -276,13 +279,13 @@ public class App {
 			double max = 0;
 			for (int j = 0 ; j < com_num ; j++)
 			{
-				if(membership[i][j]> Threshold){
-					M[i][j] = 1;
-					// max = membership[i][j];
-					// idx = j;
+				if(membership[i][j]> max){
+					// M[i][j] = 1;
+					max = membership[i][j];
+					idx = j;
 				}
 			}
-			// M[i][idx] = 1;
+			M[i][idx] = 1;
 		}
 	}
 	//===========================================================================
@@ -395,11 +398,13 @@ public class App {
     }
     //==========================================================================
     // return c = a - b
-    public static double[] subtract(double[] a, double[] b,double sparcity) {
+    public  double[] subtract(double[] a, double[] b,int sparcity) {
         int m = a.length;
+        double factor1 = 1.0/(1 * sparcity);
+        double factor2 = 1.0/((V - sparcity)* 1.0);
         double[] c = new double[m];
         for (int i = 0; i < m; i++)
-            c[i] = a[i] - b[i] * sparcity;
+            c[i] = a[i] * factor1 - b[i] * factor2;
         return c;
     }
     //==========================================================================
@@ -502,7 +507,7 @@ public class App {
 		temp.membership = temp.S.clone();
 		// temp.Intialize_Conductance();
 		System.out.println();
-		for (int iter = 0 ; iter < 15 ; iter++){
+		for (int iter = 0 ; iter < 11; iter++){
 			temp.Update_Membership();
 			temp.update_params();
 			System.out.println(iter);
