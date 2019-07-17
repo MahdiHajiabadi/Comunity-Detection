@@ -1,5 +1,7 @@
 package org.jgrapht.demo;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.Scanner;
 import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -52,7 +54,8 @@ public class PFCD {
 		// File file = new File("/home/khsh/MetaData/Codes/Inference/WorldTrade.gml");
 		// File file = new File("/home/khsh/MetaData/Codes/Inference/Rice.gml");
 		// File file = new File("/home/khsh/MetaData/Codes/Inference/Elizaveth1-2-4.edgelist");
-		File file = new File("/home/khsh/MetaData/Codes/Inference/EdgeLawyer");
+		// File file = new File("/home/khsh/MetaData/Codes/Inference/EdgeLawyer");
+		File file = new File("/home/khsh/MetaData/Codes/RiseEdge");
 	  	VertexProvider<String> vertexProvider = (label, attributes) -> label;
 	    EdgeProvider<String, DefaultEdge> edgeProvider = (from, to, label, attributes) -> new DefaultEdge();
 	    CSVImporter<String, DefaultEdge> csvImporter = new CSVImporter<>(vertexProvider, edgeProvider);
@@ -68,6 +71,42 @@ public class PFCD {
 		StringReader sr = new StringReader(new String(fileBytes, "UTF-8"));	
 	      csvImporter.importGraph(graph, sr);
 	    System.out.println("Number of Vertices Are: " + graph.vertexSet().size());
+	    // Reading Features from the Input
+	    HashMap<Integer, ArrayList<Integer>> hm = new HashMap<Integer, ArrayList<Integer>>();
+	    String[] lineVector; 
+	    int counter = 0; 
+		try {
+			Scanner scanner = new Scanner(new File("/home/khsh/MetaData/Codes/Inference/LawyerFeat"));
+			while (scanner.hasNextLine()) {
+				counter++;
+				String line = scanner.nextLine();
+				lineVector = line.split(",");
+				Integer key = Integer.parseInt(lineVector[0]);
+				ArrayList<Integer> F_Value = new ArrayList<Integer>();
+				for (int i = 1 ; i < lineVector.length ; i++) F_Value.add(Integer.parseInt(lineVector[i]));
+				if (hm.containsKey(key)){
+					ArrayList<Integer> temp = hm.get(key);
+					F_Value.addAll(temp);
+					hm.put(key,F_Value);
+				}
+				else
+				{
+					hm.put(key,F_Value);
+				}
+				if (counter%100 == 1)
+					System.out.println(" Node is: " + key + " Feat Value is: " + F_Value.get(0));
+			}
+			scanner.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+		for (Integer key: hm.keySet()){
+			ArrayList<Integer> tt = hm.get(key);
+			for (int j = 0 ; j < tt.size() ; j++ )
+				System.out.print(tt.get(j) + "  ");
+			System.out.println();
+		}
+
 	}
 	// ==========================================================================
 
