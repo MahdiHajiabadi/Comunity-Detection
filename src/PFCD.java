@@ -48,65 +48,77 @@ public class PFCD {
 					beta[i][i] = 0.3;
 				else
 					beta[i][j] = 0.1;
-		// File file = new File(basename);
-		// File file = new File("/home/khsh/MetaData/DataSet/WeddellSea_network/WeddellSea_Feeding_type.gml");
-		// File file = new File("/home/khsh/MetaData/Codes/Inference/Lawyer.gml");
-		// File file = new File("/home/khsh/MetaData/Codes/Inference/WorldTrade.gml");
-		// File file = new File("/home/khsh/MetaData/Codes/Inference/Rice.gml");
-		// File file = new File("/home/khsh/MetaData/Codes/Inference/Elizaveth1-2-4.edgelist");
-		// File file = new File("/home/khsh/MetaData/Codes/Inference/EdgeLawyer");
-		File file = new File("/home/khsh/MetaData/Codes/RiseEdge");
-	  	VertexProvider<String> vertexProvider = (label, attributes) -> label;
-	    EdgeProvider<String, DefaultEdge> edgeProvider = (from, to, label, attributes) -> new DefaultEdge();
-	    CSVImporter<String, DefaultEdge> csvImporter = new CSVImporter<>(vertexProvider, edgeProvider);
+		// File file = new File("/home/khsh/MetaData/Codes/Inference/caida.gml");
+		File file = new File("/home/khsh/MetaData/Codes/Inference/CalTech.gml");
+		// File file = new File("/home/khsh/MetaData/Codes/RiseEdge");
+  		VertexProvider<String> vp = (id, attributes) ->{ return id;};
+	    EdgeProvider<String, DefaultEdge> ep = (from, to, label, attributes) -> new DefaultEdge();
 	    // csvImporter.setFormat(CSVFormat.EDGE_LIST);
-	    Graph<String, DefaultEdge> graph = GraphTypeBuilder
+	 graph = GraphTypeBuilder
 				.undirected()
 				.allowingMultipleEdges(false)
 				.allowingSelfLoops(false)
 				.vertexSupplier(SupplierUtil.createStringSupplier())
 				.edgeSupplier(SupplierUtil.createDefaultEdgeSupplier())
-				.buildGraph();	
-	   	byte[] fileBytes = Files.readAllBytes(Paths.get(file.getAbsolutePath()));
+				.buildGraph();
+		GmlImporter<String,DefaultEdge> importer = new GmlImporter<>(vp, ep);
+		byte[] fileBytes = Files.readAllBytes(Paths.get(file.getAbsolutePath()));
 		StringReader sr = new StringReader(new String(fileBytes, "UTF-8"));	
-	      csvImporter.importGraph(graph, sr);
+		importer.importGraph(graph, sr);
 	    System.out.println("Number of Vertices Are: " + graph.vertexSet().size());
-	    // Reading Features from the Input
-	    HashMap<Integer, ArrayList<Integer>> hm = new HashMap<Integer, ArrayList<Integer>>();
-	    String[] lineVector; 
-	    int counter = 0; 
+	    V = graph.vertexSet().size();
+	    E = graph.edgeSet().size();
+	    // Reading Inherit Features from the Input
+		int counter = 0;
+		membership = new double[V][com_num];
+		S = new double[V][com_num];
+		truth = new int[V][com_num];
 		try {
-			Scanner scanner = new Scanner(new File("/home/khsh/MetaData/Codes/Inference/LawyerFeat"));
-			while (scanner.hasNextLine()) {
+			// Scanner scanner = new Scanner(new File("/home/khsh/MetaData/Codes/Inference/caida_Inherit.txt"));
+			Scanner scanner = new Scanner(new File("/home/khsh/MetaData/Codes/Inference/CalTechInherit"));
+			while (scanner.hasNextInt()) {
+				int idx = scanner.nextInt();
+				S[counter][idx-1] = 1;
+				truth[counter][idx-1] = 1;
 				counter++;
-				String line = scanner.nextLine();
-				lineVector = line.split(",");
-				Integer key = Integer.parseInt(lineVector[0]);
-				ArrayList<Integer> F_Value = new ArrayList<Integer>();
-				for (int i = 1 ; i < lineVector.length ; i++) F_Value.add(Integer.parseInt(lineVector[i]));
-				if (hm.containsKey(key)){
-					ArrayList<Integer> temp = hm.get(key);
-					F_Value.addAll(temp);
-					hm.put(key,F_Value);
-				}
-				else
-				{
-					hm.put(key,F_Value);
-				}
-				if (counter%100 == 1)
-					System.out.println(" Node is: " + key + " Feat Value is: " + F_Value.get(0));
 			}
 			scanner.close();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
-		for (Integer key: hm.keySet()){
-			ArrayList<Integer> tt = hm.get(key);
-			for (int j = 0 ; j < tt.size() ; j++ )
-				System.out.print(tt.get(j) + "  ");
-			System.out.println();
+		// F = S.clone();
+		I = new double[com_num][com_num];
+		W = new double[com_num][com_num];
+		for (int i = 0 ; i < com_num ; i++){
+			I[i][i] = 1;
+			W[i][i] = 1;
 		}
+		// Reading generated Feature from the Input
+		int[] temp = new int[V];
+		int max = 0;
+		counter = 0;
+		// F = new double[V][com_num];
+		// F = S.clone();
+		try {
+			Scanner scanner = new Scanner(new File("/home/khsh/MetaData/Codes/Inference/CalTechGenerated"));
+			while (scanner.hasNextInt()) {
+				int idx = scanner.nextInt();
+				if (idx > max)
+					max = idx;
+				temp[counter++] = idx;
+			}
+			scanner.close();
+		 }catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+		F = new double[V][max];
+		for (int i = 0 ; i < V ; i++)
+		{
+			F[i][temp[i]-1] = 1;
+ 		}
+ 		// W = new double[max][com_num];
 
+ 		// System.out.println("Number of Generated Features Are: " + max);
 	}
 	// ==========================================================================
 
@@ -146,13 +158,16 @@ public class PFCD {
         	i++;
         }
         // double[] tt = add_columns(membership);
+
 	}
 	//==============================================================================
 	public void Update_Membership(){
 		double[][] Membership_difference = new double[V][com_num];
 		double[] sum_total = add_columns(membership);
 		double[][] deltaI = new double[com_num][com_num];
+		int counter = 0;
 		for (String s: graph.vertexSet()){
+			int idx = Integer.valueOf(s);
 			double[] source_membership = membership[Integer.valueOf(s)];
 			double[] neighbor_membership_acc = new double[com_num];
 			double[] source_times_beta = multiply(source_membership, beta);
@@ -171,13 +186,13 @@ public class PFCD {
 			double[] non_neigh_membership_acc = subtract(sum_total , neighbor_membership_acc);
 			double[] non_neigh_times_beta = multiply(non_neigh_membership_acc,beta);
 			Membership_difference[Integer.valueOf(s)] = subtract(neigh_times_beta , non_neigh_times_beta ,  Neigh.size());
-			System.out.println(" Structural inference is: " + Membership_difference[Integer.valueOf(s)][0]);
+			// System.out.println(" Structural inference is: " + Membership_difference[Integer.valueOf(s)][0]);
 			double[] node_att = multiply(membership[Integer.valueOf(s)] , W);
 			for (int i = 0 ; i < com_num ; i++)
 				node_att[i] = 1.0/(1 + Math.exp(-node_att[i]));
 			double[] first_val = subtract(F[Integer.valueOf(s)] , node_att);
 			double[] diff_att = multiply(first_val , W);
-			System.out.println(" Attributal inference is: " + diff_att[0]);
+			// System.out.println(" Attributal inference is: " + diff_att[0]);
 			Membership_difference[Integer.valueOf(s)] = add(Membership_difference[Integer.valueOf(s)] , diff_att);
 			// System.out.println(Membership_difference[Integer.valueOf(s)][0]);
 			//=============================== Updating the Parameter I
@@ -479,31 +494,33 @@ public class PFCD {
     }
     //==========================================================================
 	public static void main(String[] args) throws Exception {
+		long startTime = System.currentTimeMillis();
 		String basename = args[0];
 		PFCD temp = new PFCD(args);
-		// temp.membership = temp.S.clone();
-		// // temp.Intialize_Conductance();
-		// System.out.println();
-		// for (int iter = 0 ; iter < 11; iter++){
-		// 	temp.Update_Membership();
-		// 	temp.update_params();
-		// 	System.out.println(iter);
-		// }
-		// temp.deterministic_membership();
-		// int[] res = temp.add_columns(temp.M);
-		// for (int ii = 0 ; ii < res.length ; ii++)
-		// 		System.out.print(res[ii] + "  ");
-		// temp.matching();
-		// double f_measure = temp.F_Meausre();
-		// System.out.println("F_Measure value is: " + f_measure);
-		// double H_Y = temp.Entropy(temp.truth);
-		// System.out.println(" H(Y): " + H_Y);
-		// double H_C = temp.Entropy(temp.M);
-		// System.out.println(" H(C): " + H_C);
-		// double I_Y_C = temp.conditional_entropy();
-		// I_Y_C = H_Y - I_Y_C;
-		// System.out.println(" I(Y:C): " + I_Y_C);
-		// double NMI = 2 * I_Y_C/(H_Y + H_C);
-		// System.out.println("NMI is: " + NMI);
+		temp.membership = temp.S.clone();
+		temp.Intialize_Conductance();
+		// // System.out.println();
+		for (int iter = 0 ; iter < 10; iter++){
+			temp.Update_Membership();
+			temp.update_params();
+			System.out.println(iter);
+		}
+		temp.deterministic_membership();
+		int[] res = temp.add_columns(temp.M);
+		for (int ii = 0 ; ii < res.length ; ii++)
+				System.out.print(res[ii] + "  ");
+		temp.matching();
+		double f_measure = temp.F_Meausre();
+		System.out.println("F_Measure value is: " + f_measure);
+		double H_Y = temp.Entropy(temp.truth);
+		System.out.println(" H(Y): " + H_Y);
+		double H_C = temp.Entropy(temp.M);
+		System.out.println(" H(C): " + H_C);
+		double I_Y_C = temp.conditional_entropy();
+		I_Y_C = H_Y - I_Y_C;
+		System.out.println(" I(Y:C): " + I_Y_C);
+		double NMI = 2 * I_Y_C/(H_Y + H_C);
+		System.out.println("NMI is: " + NMI);
+		System.out.println("Total time elapsed = " + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");	
 	}
 }
