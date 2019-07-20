@@ -49,8 +49,13 @@ public class PFCD {
 				else
 					beta[i][j] = 0.1;
 		// File file = new File("/home/khsh/MetaData/Codes/Inference/caida.gml");
-		File file = new File("/home/khsh/MetaData/Codes/Inference/CalTech.gml");
+		// File file = new File("/home/khsh/MetaData/Codes/Inference/CalTech.gml");
 		// File file = new File("/home/khsh/MetaData/Codes/RiseEdge");
+		// File file = new File("/home/khsh/MetaData/Codes/Inference/Lawyer.gml");
+		// File file = new File("/home/khsh/MetaData/Codes/Inference/DBLPNew.gml");
+		// File file = new File("/home/khsh/MetaData/Codes/Inference/ArxForNC.gml");
+		   // File file = new File("/home/khsh/MetaData/Codes/Inference/polblogs.gml");
+		File file = new File("/home/khsh/MetaData/DataSet/WeddellSea_network/WeddellNewmanFeat.gml");
   		VertexProvider<String> vp = (id, attributes) ->{ return id;};
 	    EdgeProvider<String, DefaultEdge> ep = (from, to, label, attributes) -> new DefaultEdge();
 	    // csvImporter.setFormat(CSVFormat.EDGE_LIST);
@@ -75,11 +80,16 @@ public class PFCD {
 		truth = new int[V][com_num];
 		try {
 			// Scanner scanner = new Scanner(new File("/home/khsh/MetaData/Codes/Inference/caida_Inherit.txt"));
-			Scanner scanner = new Scanner(new File("/home/khsh/MetaData/Codes/Inference/CalTechInherit"));
+			// Scanner scanner = new Scanner(new File("/home/khsh/MetaData/Codes/Inference/LawyerCom"));
+			// Scanner scanner = new Scanner(new File("/home/khsh/MetaData/Codes/Inference/DBLPCom"));
+			// Scanner scanner = new Scanner(new File("/home/khsh/MetaData/Codes/Inference/ArxCom"));
+			// Scanner scanner = new Scanner(new File("/home/khsh/MetaData/Codes/Inference/CalTechInherit"));
+			 // Scanner scanner = new Scanner(new File("/home/khsh/MetaData/Codes/Inference/polblogsCom"));
+			 Scanner scanner = new Scanner(new File("/home/khsh/MetaData/DataSet/WeddellSea_network/WeddelCom"));
 			while (scanner.hasNextInt()) {
 				int idx = scanner.nextInt();
-				S[counter][idx-1] = 1;
-				truth[counter][idx-1] = 1;
+				S[counter][idx] = 1;
+				truth[counter][idx] = 1;
 				counter++;
 			}
 			scanner.close();
@@ -100,7 +110,11 @@ public class PFCD {
 		// F = new double[V][com_num];
 		// F = S.clone();
 		try {
-			Scanner scanner = new Scanner(new File("/home/khsh/MetaData/Codes/Inference/CalTechGenerated"));
+			// Scanner scanner = new Scanner(new File("/home/khsh/MetaData/Codes/Inference/LawyerCom"));\
+			// Scanner scanner = new Scanner(new File("/home/khsh/MetaData/Codes/Inference/DBLPCom"));
+			// Scanner scanner = new Scanner(new File("/home/khsh/MetaData/Codes/Inference/ArxCom"));
+			// Scanner scanner = new Scanner(new File("/home/khsh/MetaData/Codes/Inference/polblogsCom"));
+			Scanner scanner = new Scanner(new File("/home/khsh/MetaData/DataSet/WeddellSea_network/WeddelCom"));
 			while (scanner.hasNextInt()) {
 				int idx = scanner.nextInt();
 				if (idx > max)
@@ -111,14 +125,13 @@ public class PFCD {
 		 }catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
-		F = new double[V][max];
+		F = new double[V][max + 1];
 		for (int i = 0 ; i < V ; i++)
 		{
-			F[i][temp[i]-1] = 1;
+			F[i][temp[i]] = 1;
  		}
  		// W = new double[max][com_num];
-
- 		// System.out.println("Number of Generated Features Are: " + max);
+ 		System.out.println("Number of Generated Features Are: " + max);
 	}
 	// ==========================================================================
 
@@ -497,6 +510,7 @@ public class PFCD {
 		long startTime = System.currentTimeMillis();
 		String basename = args[0];
 		PFCD temp = new PFCD(args);
+		System.out.println("Reading is Done:");
 		temp.membership = temp.S.clone();
 		temp.Intialize_Conductance();
 		// // System.out.println();
