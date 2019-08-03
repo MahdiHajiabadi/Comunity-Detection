@@ -49,13 +49,14 @@ public class PFCD {
 				else
 					beta[i][j] = 0.1;
 		// File file = new File("/home/khsh/MetaData/Codes/Inference/caida.gml");
-		// File file = new File("/home/khsh/MetaData/Codes/Inference/CalTech.gml");
+		File file = new File("/home/khsh/MetaData/Codes/Inference/CalTech.gml");
 		// File file = new File("/home/khsh/MetaData/Codes/RiseEdge");
 		// File file = new File("/home/khsh/MetaData/Codes/Inference/Lawyer.gml");
 		// File file = new File("/home/khsh/MetaData/Codes/Inference/DBLPNew.gml");
 		// File file = new File("/home/khsh/MetaData/Codes/Inference/ArxForNC.gml");
 		   // File file = new File("/home/khsh/MetaData/Codes/Inference/polblogs.gml");
-		File file = new File("/home/khsh/MetaData/DataSet/WeddellSea_network/WeddellNewmanFeat.gml");
+		// File file = new File("/home/khsh/MetaData/DataSet/WeddellSea_network/WeddellNewmanFeat.gml");
+		// File file = new File("/home/khsh/MetaData/RelatedPapers/LizaCitations/DataSet/data_0/patent.gml");
   		VertexProvider<String> vp = (id, attributes) ->{ return id;};
 	    EdgeProvider<String, DefaultEdge> ep = (from, to, label, attributes) -> new DefaultEdge();
 	    // csvImporter.setFormat(CSVFormat.EDGE_LIST);
@@ -83,13 +84,14 @@ public class PFCD {
 			// Scanner scanner = new Scanner(new File("/home/khsh/MetaData/Codes/Inference/LawyerCom"));
 			// Scanner scanner = new Scanner(new File("/home/khsh/MetaData/Codes/Inference/DBLPCom"));
 			// Scanner scanner = new Scanner(new File("/home/khsh/MetaData/Codes/Inference/ArxCom"));
-			// Scanner scanner = new Scanner(new File("/home/khsh/MetaData/Codes/Inference/CalTechInherit"));
+			Scanner scanner = new Scanner(new File("/home/khsh/MetaData/Codes/Inference/CalTechInherit"));
 			 // Scanner scanner = new Scanner(new File("/home/khsh/MetaData/Codes/Inference/polblogsCom"));
-			 Scanner scanner = new Scanner(new File("/home/khsh/MetaData/DataSet/WeddellSea_network/WeddelCom"));
+			 // Scanner scanner = new Scanner(new File("/home/khsh/MetaData/DataSet/WeddellSea_network/WeddelCom"));
+			// Scanner scanner = new Scanner(new File("/home/khsh/MetaData/RelatedPapers/LizaCitations/DataSet/data_0/Com34"));
 			while (scanner.hasNextInt()) {
 				int idx = scanner.nextInt();
-				S[counter][idx] = 1;
-				truth[counter][idx] = 1;
+				S[counter][idx-1] = 1;
+				truth[counter][idx-1] = 1;
 				counter++;
 			}
 			scanner.close();
@@ -107,31 +109,32 @@ public class PFCD {
 		int[] temp = new int[V];
 		int max = 0;
 		counter = 0;
-		// F = new double[V][com_num];
-		// F = S.clone();
-		try {
-			// Scanner scanner = new Scanner(new File("/home/khsh/MetaData/Codes/Inference/LawyerCom"));\
-			// Scanner scanner = new Scanner(new File("/home/khsh/MetaData/Codes/Inference/DBLPCom"));
-			// Scanner scanner = new Scanner(new File("/home/khsh/MetaData/Codes/Inference/ArxCom"));
-			// Scanner scanner = new Scanner(new File("/home/khsh/MetaData/Codes/Inference/polblogsCom"));
-			Scanner scanner = new Scanner(new File("/home/khsh/MetaData/DataSet/WeddellSea_network/WeddelCom"));
-			while (scanner.hasNextInt()) {
-				int idx = scanner.nextInt();
-				if (idx > max)
-					max = idx;
-				temp[counter++] = idx;
-			}
-			scanner.close();
-		 }catch (FileNotFoundException e) {
-			e.printStackTrace();
-		}
-		F = new double[V][max + 1];
-		for (int i = 0 ; i < V ; i++)
-		{
-			F[i][temp[i]] = 1;
- 		}
- 		// W = new double[max][com_num];
- 		System.out.println("Number of Generated Features Are: " + max);
+		F = new double[V][com_num];
+		F = S.clone();
+		// try {
+		// 	// Scanner scanner = new Scanner(new File("/home/khsh/MetaData/Codes/Inference/LawyerCom"));\
+		// 	// Scanner scanner = new Scanner(new File("/home/khsh/MetaData/Codes/Inference/DBLPCom"));
+		// 	// Scanner scanner = new Scanner(new File("/home/khsh/MetaData/Codes/Inference/ArxCom"));
+		// 	// Scanner scanner = new Scanner(new File("/home/khsh/MetaData/Codes/Inference/polblogsCom"));
+		// 	// Scanner scanner = new Scanner(new File("/home/khsh/MetaData/DataSet/WeddellSea_network/WeddelCom"));
+		// 	Scanner scanner = new Scanner(new File("/home/khsh/MetaData/RelatedPapers/LizaCitations/DataSet/data_0/Com"));
+		// 	while (scanner.hasNextInt()) {
+		// 		int idx = scanner.nextInt();
+		// 		if (idx > max)
+		// 			max = idx;
+		// 		temp[counter++] = idx;
+		// 	}
+		// 	scanner.close();
+		//  }catch (FileNotFoundException e) {
+		// 	e.printStackTrace();
+		// }
+		// F = new double[V][max + 1];
+		// for (int i = 0 ; i < V ; i++)
+		// {
+		// 	F[i][temp[i]] = 1;
+ 	// 	}
+ 	// 	// W = new double[max][com_num];
+ 	// 	System.out.println("Number of Generated Features Are: " + max);
 	}
 	// ==========================================================================
 
@@ -512,9 +515,9 @@ public class PFCD {
 		PFCD temp = new PFCD(args);
 		System.out.println("Reading is Done:");
 		temp.membership = temp.S.clone();
-		temp.Intialize_Conductance();
+		// temp.Intialize_Conductance();
 		// // System.out.println();
-		for (int iter = 0 ; iter < 10; iter++){
+		for (int iter = 0 ; iter < 9; iter++){
 			temp.Update_Membership();
 			temp.update_params();
 			System.out.println(iter);
