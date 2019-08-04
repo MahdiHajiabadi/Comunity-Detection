@@ -1,0 +1,56 @@
+Time								
+
+Proposed			NC					Louvain
+
+Rice 31.177								0.33 Seconds, 0.67 / 0.41
+
+CalTech 1.497 Second		25m18.627s				0.02 Secibds, 0.34 / 0.1
+
+WorldTrade 0.52 Seconds		3.097 Seconds				0.004 Seconds, 0.24 / 0.26
+
+Internet: 2818 Seconds							0.63 Seconcds/ 0.39 , 0.05	
+
+Lawyer: 0.765 Seconds							0.01 , 0.03 , 0.58
+
+DBLP: 2 Seconds								0.005 Seconds, 0.01, 0.16
+
+Arxiv: 2.31 Seconds		1m31s					0.01 , 0.004 , 0.12
+
+Political Blogs: 0.704 Seconds						0.001 Seconds, 0.004 , 0.39
+
+WeddellSea: 1.41 Seconds	24m21s					0.03 Secobds , ? , ?
+
+Malaria: 0.81 Seconds							2.3 Seconds
+
+Patent: 746.006 Seconds
+
+
+
+Patent:
+
+Cesna: 37 Sec / 0.21 FMeasure , <.001 NMI
+
+Cesna: Internet 5400 seconds
+
+DBLP: 0.7 Seconds
+
+Rise: 5.4 Seconds
+
+CalTech:4.71 Seconds
+
+Malaria: 1.918 Seconds
+
+Political Blogs: 5.617 Seconds
+
+-
+
+Structural Analysis.
+CalTech: 0.65 / 0.45
+Rise: 0.87/0.65
+WorldTrade: 0.7 / 0.45
+Lawyer: 0.97 / 0.71
+DBLP: 0.88 / 0.67
+Arxiv: -- / --
+PolBlogs: 1/1
+WeddellSea: 0.4 / 0.16
+Malaria: 
